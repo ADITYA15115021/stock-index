@@ -1,4 +1,7 @@
-from fastapi import APIRouter
+from datetime import datetime, timedelta, time
+from dateutil.relativedelta import relativedelta
+from zoneinfo import ZoneInfo
+from fastapi import APIRouter, Query
 from sqlalchemy.orm import Session
 
 from app.db.database import engine
@@ -58,3 +61,65 @@ def get_security(securityId: int):
         return {
             "error": "Failed to retrieve security data"
         }
+
+
+@router.get("/securities/{securityId}/history")
+def get_security_history(
+    securityId: int,
+    period: str = Query("1D")
+):
+    try:
+        IST = ZoneInfo("Asia/Kolkata")
+        today = datetime.now(IST).date()
+
+        if period == "1D":
+            start_date = today
+        elif period == "1W":
+            start_date = today - timedelta(days=6)
+        elif period == "1M":
+            start_date = today - relativedelta(months=1)
+        elif period == "3M":
+            start_date = today - relativedelta(months=3)
+        elif period == "6M":
+            start_date = today - relativedelta(months=6)
+        elif period == "1Y":
+            start_date = today - relativedelta(years=1)
+        else:
+            return {"error": "Invalid period"}
+
+        start_datetime = datetime.combine(
+            start_date,
+            time.min,
+            tzinfo=IST
+        )
+
+        end_datetime = datetime.combine(
+            today + timedelta(days=1),
+            time.min,
+            tzinfo=IST
+        )
+
+        with Session(engine) as db:
+            records = db.query(MarketData).filter(
+                MarketData.security_id == securityId,
+                MarketData.timestamp >= start_datetime,
+                MarketData.timestamp < end_datetime
+            ).order_by(
+                MarketData.timestamp.asc()
+            ).all()
+
+            return [
+                {
+                    "date": record.timestamp.astimezone(IST).strftime("%Y-%m-%d"),
+                    "time": record.timestamp.astimezone(IST).strftime("%H:%M"),
+                    "last_price": record.last_price
+                }
+                for record in records
+            ]
+
+    except Exception as e:
+        print(
+            f"[GET_SECURITY_HISTORY] Failed for security_id={securityId}: {e}",
+            flush=True
+        )
+        return {"error": "Failed to retrieve security history"}
