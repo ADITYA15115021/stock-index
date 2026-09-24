@@ -51,3 +51,9 @@ export type IndexHistoryPoint = {
   time: string
   index_value: number
 }
+
+export type SecurityHistoryPoint = {
+  date: string
+  time: string
+  last_price: number
+}

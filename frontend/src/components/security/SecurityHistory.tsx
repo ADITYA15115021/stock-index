@@ -8,14 +8,14 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 
-import { fetchIndexHistory } from '../../api'
-import type { IndexHistoryPoint } from '../../types'
+import { fetchSecurityHistory } from '../../api'
+import type { SecurityHistoryPoint } from '../../types'
 
 type Period = '1D' | '1W' | '1M' | '3M' | '6M' | '1Y'
 
-export default function IndexHistory({ indexId }: { indexId: number }) {
+export default function SecurityHistory({ securityId }: { securityId: number }) {
   const [period, setPeriod] = useState<Period>('1D')
-  const [history, setHistory] = useState<IndexHistoryPoint[]>([])
+  const [history, setHistory] = useState<SecurityHistoryPoint[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -23,17 +23,17 @@ export default function IndexHistory({ indexId }: { indexId: number }) {
     setLoading(true)
     setError(null)
 
-    fetchIndexHistory(indexId, period)
+    fetchSecurityHistory(securityId, period)
       .then(setHistory)
       .catch((requestError: unknown) => {
         setError(
           requestError instanceof Error
             ? requestError.message
-            : 'Unable to load index history.'
+            : 'Unable to load price history.'
         )
       })
       .finally(() => setLoading(false))
-  }, [indexId, period])
+  }, [securityId, period])
 
   const chartData = history.map((item) => ({
     ...item,
@@ -44,7 +44,7 @@ export default function IndexHistory({ indexId }: { indexId: number }) {
     <section className="history-card">
       <div className="history-header">
         <div className="history-title">
-          <p className="eyebrow">Index history</p>
+          <p className="eyebrow">Price history</p>
         </div>
 
         <div className="history-periods" role="tablist" aria-label="Select time period">
@@ -64,15 +64,15 @@ export default function IndexHistory({ indexId }: { indexId: number }) {
       </div>
 
       {loading ? (
-        <div className="section-state">Loading index history...</div>
+        <div className="section-state">Loading price history...</div>
       ) : error ? (
         <div className="section-state error">
-          <strong>Could not load index history.</strong>
+          <strong>Could not load price history.</strong>
           <span>{error}</span>
         </div>
       ) : history.length === 0 ? (
         <div className="section-state">
-          No index history is available for this period.
+          No price history is available for this period.
         </div>
       ) : (
         <div className="index-chart">
@@ -103,10 +103,11 @@ export default function IndexHistory({ indexId }: { indexId: number }) {
                 }}
                 itemStyle={{ color: 'var(--text-primary)' }}
                 labelStyle={{ color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}
+                formatter={(value: unknown) => [typeof value === 'number' ? `₹${value.toFixed(2)}` : String(value), 'Price']}
               />
               <Line
                 type="monotone"
-                dataKey="index_value"
+                dataKey="last_price"
                 stroke="var(--text-primary)"
                 strokeWidth={2}
                 dot={false}

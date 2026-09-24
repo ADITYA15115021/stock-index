@@ -1,4 +1,4 @@
-import type { IndexConstituent, IndexSnapshot, IndexSummary, SecurityDetail,IndexHistoryPoint} from './types'
+import type { IndexConstituent, IndexSnapshot, IndexSummary, SecurityDetail, IndexHistoryPoint, SecurityHistoryPoint } from './types'
 
 const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim()
 
@@ -41,8 +41,12 @@ export function getLiveUrl(indexId: number) {
   return url.toString()
 }
 
-
 export const fetchIndexHistory = (indexId: number, period: string) =>
   getJson<IndexHistoryPoint[]>(
     `/indices/${indexId}/history?period=${period}`
   )
+
+export const fetchSecurityHistory = (securityId: number, period: string) =>
+  getJson<SecurityHistoryPoint[]>(
+    `/securities/${securityId}/history?period=${period}`
+  )
